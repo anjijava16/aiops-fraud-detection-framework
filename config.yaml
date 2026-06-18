@@ -1,0 +1,108 @@
+ingestion:
+  kafka:
+    bootstrap_servers: "localhost:9092"
+    topic: "transactions"
+    consumer_group: "fraud-detection-group"
+    reconnect_timeout_seconds: 5
+  batch:
+    default_batch_size: 10000
+  dead_letter_queue:
+    enabled: true
+
+preprocessing:
+  smote:
+    target_ratio: 1.0
+    k_neighbors: 5
+  scaler:
+    type: "StandardScaler"
+  feature_selection:
+    correlation_threshold: 0.95
+  splitting:
+    test_size: 0.2
+    k_folds: 5
+    random_seed: 42
+
+ensemble:
+  xgboost:
+    learning_rate: 0.1
+    max_depth: 6
+    n_estimators: 300
+    scale_pos_weight: 1.0
+  lightgbm:
+    learning_rate: 0.1
+    num_leaves: 31
+    n_estimators: 300
+    is_unbalance: true
+  catboost:
+    learning_rate: 0.1
+    depth: 6
+    iterations: 300
+    auto_class_weights: "Balanced"
+  voting:
+    weights:
+      xgboost: 0.333
+      lightgbm: 0.333
+      catboost: 0.334
+    decision_threshold: 0.5
+  logging_interval: 10
+
+explainability:
+  shap:
+    top_n_features: 20
+    timeout_seconds: 300
+  lime:
+    num_samples: 5000
+    top_n_features: 10
+    low_fidelity_threshold: 0.6
+
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "fraud-detection"
+  promotion_thresholds:
+    f1_min: 0.85
+    auc_roc_min: 0.90
+    precision_min: 0.80
+    recall_min: 0.75
+  opentelemetry:
+    collector_endpoint: "http://localhost:4317"
+    buffer_max_spans: 1000
+    retry_interval_seconds: 30
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  auth:
+    enabled: true
+    max_concurrent_keys: 50
+  rate_limit:
+    requests_per_window: 100
+    window_seconds: 60
+
+monitoring:
+  drift:
+    psi_threshold: 0.2
+    ks_p_value_threshold: 0.05
+    psi_bins: 10
+    schedule_seconds: 3600
+    window_size: 10000
+    min_samples: 100
+  alerting:
+    slack_webhook_url: ""
+    pagerduty_routing_key: ""
+    retry_attempts: 3
+    retry_base_interval_seconds: 2
+    suppression_window_minutes: 15
+    f1_alert_threshold: 0.90
+  retraining:
+    drift_feature_threshold: 3
+    data_window_days: 7
+    min_records: 1000
+  prometheus:
+    metrics_port: 9090
+    scrape_interval_seconds: 15
+  grafana:
+    dashboard_output_path: "./dashboards/"
+
+pipeline:
+  timeout_hours: 6
+  dry_run: false
